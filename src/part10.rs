@@ -2,7 +2,7 @@
 // ===========================
 
 use std::fmt;
-use part05::BigInt;
+use crate::part05::BigInt;
 
 //@ Assume we want to write a function that does *something* on, say, every digit of a `BigInt`.
 //@ We will then need a way to express the action that we want to be taken, and to pass this to
@@ -68,10 +68,10 @@ pub fn main() {
 //@ arguments and produce a result, and they have an *environment* they can use, which corresponds
 //@ to the type `PrintWithString` (or any other type implementing `Action`).
 //@ Again we have the choice of passing this environment in owned or borrowed form, so there are
-//@ three traits for closures in Rust: `Fn`-closures get a shared reference, `FnMut`-closures get a
-//@ mutable reference, and `FnOnce`-closures consume their environment (and can hence be called
+//@ three traits for closures in Rust: `dyn Fn`-closures get a shared reference, `dyn FnMut`-closures get a
+//@ mutable reference, and `dyn FnOnce`-closures consume their environment (and can hence be called
 //@ only once). The syntax for a closure trait which takes arguments of type `T1`, `T2`, ... and
-//@ returns something of type `U` is `Fn(T1, T2, ...) -> U`.
+//@ returns something of type `U` is `dyn Fn(T1, T2, ...) -> U`.
 
 // This defines `act` very similar to above, but now we demand `A` to be the type of a closure that
 // mutates its borrowed environment, takes a digit, and returns nothing.
@@ -101,7 +101,7 @@ pub fn print_with_prefix(b: &BigInt, prefix: String) {
 // You can change `main` to call this function, and you should notice - nothing, no difference in
 // behavior. But we wrote much less boilerplate code!
 
-// Remember that we decided to use the `FnMut` trait above? This means our closure could actually
+// Remember that we decided to use the `dyn FnMut` trait above? This means our closure could actually
 // mutate its environment. For example, we can use that to count the digits as they are printed.
 pub fn print_and_count(b: &BigInt) {
     let mut count: usize = 0;

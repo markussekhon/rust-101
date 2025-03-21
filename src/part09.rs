@@ -1,7 +1,7 @@
 // Rust-101, Part 09: Iterators
 // ============================
 
-use part05::BigInt;
+use crate::part05::BigInt;
 
 //@ In the following, we will look into the iterator mechanism of Rust and make our `BigInt`
 //@ compatible with the `for` loops. Of course, this is all about implementing certain traits

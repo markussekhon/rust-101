@@ -7,29 +7,29 @@
 
 //@ First of all, we need to find a way to store the callbacks. Clearly, there will be a `Vec`
 //@ involved, so that we can always grow the number of registered callbacks. A callback will be a
-//@ closure, i.e., something implementing `FnMut(i32)` (we want to call this multiple times, so
-//@ clearly `FnOnce` would be no good). So our first attempt may be the following.
+//@ closure, i.e., something implementing `dyn FnMut(i32)` (we want to call this multiple times, so
+//@ clearly `dyn FnOnce` would be no good). So our first attempt may be the following.
 // For now, we just decide that the callbacks have an argument of type `i32`.
 struct CallbacksV1<F: FnMut(i32)> {
     callbacks: Vec<F>,
 }
 //@ However, this will not work. Remember how the "type" of a closure is specific to the
-//@ environment of captured variables. Different closures all implementing `FnMut(i32)` may have
+//@ environment of captured variables. Different closures all implementing `dyn FnMut(i32)` may have
 //@ different types. However, a `Vec<F>` is a *uniformly typed* vector.
 
 //@ We will thus need a way to store things of *different* types in the same vector. We know all
-//@ these types implement `FnMut(i32)`. For this scenario, Rust provides *trait objects*: The truth
-//@ is, `FnMut(i32)` is not just a trait. It is also a type, that can be given to anything
+//@ these types implement `dyn FnMut(i32)`. For this scenario, Rust provides *trait objects*: The truth
+//@ is, `dyn FnMut(i32)` is not just a trait. It is also a type, that can be given to anything
 //@ implementing this trait. So, we may write the following.
 /* struct CallbacksV2 {
-    callbacks: Vec<FnMut(i32)>,
+    callbacks: Vec<dyn FnMut(i32)>,
 } */
 //@ But, Rust complains about this definition. It says something about "Sized". What's the trouble?
 //@ See, for many things we want to do, it is crucial that Rust knows the precise, fixed size of
 //@ the type - that is, how large this type will be when represented in memory. For example, for a
 //@ `Vec`, the elements are stored one right after the other. How should that be possible, without
-//@ a fixed size? The point is, `FnMut(i32)` could be of any size. We don't know how large that
-//@ "type that implements `FnMut(i32)`" is. Rust calls this an *unsized* type.
+//@ a fixed size? The point is, `dyn FnMut(i32)` could be of any size. We don't know how large that
+//@ "type that implements `dyn FnMut(i32)`" is. Rust calls this an *unsized* type.
 //@ Whenever we introduce a type variable, Rust will implicitly add a bound to that variable,
 //@ demanding that it is sized. That's why we did not have to worry about this so far. <br/> You
 //@ can opt-out of this implicit bound by saying `T: ?Sized`. Then `T` may or may not be sized.
@@ -40,7 +40,7 @@ struct CallbacksV1<F: FnMut(i32)> {
 //@ C++. In our current example, the important bit is that since it's a pointer, `T` can be
 //@ unsized, but `Box<T>` itself will always be sized. So we can put it in a `Vec`.
 pub struct Callbacks {
-    callbacks: Vec<Box<FnMut(i32)>>,
+    callbacks: Vec<Box<dyn FnMut(i32)>>,
 }
 
 impl Callbacks {
@@ -50,13 +50,13 @@ impl Callbacks {
     }
 
     // Registration simply stores the callback.
-    pub fn register(&mut self, callback: Box<FnMut(i32)>) {
+    pub fn register(&mut self, callback: Box<dyn FnMut(i32)>) {
         self.callbacks.push(callback);
     }
 
     // We can also write a generic version of `register`, such that it will be instantiated with
     // some concrete closure type `F` and do the creation of the `Box` and the conversion from `F`
-    // to `FnMut(i32)` itself.
+    // to `dyn FnMut(i32)` itself.
     
     //@ For this to work, we need to demand that the type `F` does not contain any short-lived
     //@ references. After all, we will store it in our list of callbacks indefinitely. If the
@@ -73,12 +73,12 @@ impl Callbacks {
 
     // And here we call all the stored callbacks.
     pub fn call(&mut self, val: i32) {
-        // Since they are of type `FnMut`, we need to mutably iterate.
+        // Since they are of type `dyn FnMut`, we need to mutably iterate.
         for callback in self.callbacks.iter_mut() {
-            //@ Here, `callback` has type `&mut Box<FnMut(i32)>`. We can make use of the fact that
+            //@ Here, `callback` has type `&mut Box<dyn FnMut(i32)>`. We can make use of the fact that
             //@ `Box` is a *smart pointer*: In particular, we can use it as if it were a normal
             //@ reference, and use `*` to get to its contents. Then we obtain a mutable reference
-            //@ to these contents, because we call a `FnMut`.
+            //@ to these contents, because we call a `dyn FnMut`.
             (&mut *callback)(val);                                  /*@*/
             //@ Just like it is the case with normal references, this typically happens implicitly
             //@ with smart pointers, so we can also directly call the function.
@@ -124,8 +124,8 @@ pub fn main() {
 //@ There are some restrictions for traits to be usable as trait objects. This is called *object
 //@ safety* and described in [the documentation](https://doc.rust-lang.org/stable/book/trait-
 //@ objects.html) and [the reference](https://doc.rust-lang.org/reference.html#trait-objects).
-//@ In case of the `FnMut` trait, there's only a single action to be performed: Calling the
-//@ closure. You can thus think of a pointer to `FnMut` as a pointer to the code, and a pointer to
+//@ In case of the `dyn FnMut` trait, there's only a single action to be performed: Calling the
+//@ closure. You can thus think of a pointer to `dyn FnMut` as a pointer to the code, and a pointer to
 //@ the environment. This is how Rust recovers the typical encoding of closures as a special case
 //@ of a more general concept.
 //@ 

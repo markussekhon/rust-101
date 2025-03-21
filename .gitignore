@@ -1,3 +1,5 @@
-target/
 sync-docs
 .tmp/
+target/
+debug/
+**/*.rs.bk

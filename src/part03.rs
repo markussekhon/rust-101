@@ -89,7 +89,7 @@ fn read_vec() -> Vec<i32> {
 // For the rest of the code, we just re-use part 02 by importing it with `use`.
 //@ I already sneaked a bunch of `pub` in part 02 to make this possible: Only
 //@ items declared public can be imported elsewhere.
-use part02::{SomethingOrNothing,Something,Nothing,vec_min};
+use crate::part02::{SomethingOrNothing,Something,Nothing,vec_min};
 
 // If you update your `main.rs` to use part 03, `cargo run` should now ask you for some numbers,
 // and tell you the minimum. Neat, isn't it?

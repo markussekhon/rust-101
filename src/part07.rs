@@ -1,7 +1,7 @@
 // Rust-101, Part 07: Operator Overloading, Tests, Formatting
 // ==========================================================
 
-pub use part05::BigInt;
+pub use crate::part05::BigInt;
 
 // With our new knowledge of lifetimes, we are now able to write down the desired type of `min`:
 //@ We want the function to take two references *with the same lifetime*, and then

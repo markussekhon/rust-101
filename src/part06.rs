@@ -2,7 +2,7 @@
 // ==================================
 
 // We continue to work on our `BigInt`, so we start by importing what we already established.
-use part05::BigInt;
+use crate::part05::BigInt;
 
 // With `BigInt` being about numbers, we should be able to write a version of `vec_min`
 // that computes the minimum of a list of `BigInt`. First, we have to write `min` for `BigInt`.
@@ -74,7 +74,7 @@ fn vec_min(v: &Vec<BigInt>) -> Option<BigInt> {
 //@ If you try to implement `Copy` for `BigInt`, you will notice that Rust does not let you do
 //@ that. A type can only be `Copy` if all its elements are `Copy`, and that's not the case for
 //@ `BigInt`. However, we can make `SomethingOrNothing<T>` copy if `T` is `Copy`.
-use part02::{SomethingOrNothing,Something,Nothing};
+use crate::part02::{SomethingOrNothing,Something,Nothing};
 impl<T: Copy> Copy for SomethingOrNothing<T> {}
 //@ Again, Rust can generate implementations of `Copy` automatically. If
 //@ you add `#[derive(Copy,Clone)]` right before the definition of `SomethingOrNothing`,

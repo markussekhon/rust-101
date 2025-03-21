@@ -2,7 +2,7 @@
 // ============================================
 
 use std::{cmp,ops};
-use part05::BigInt;
+use crate::part05::BigInt;
 
 //@ As our next goal, let us implement addition for our `BigInt`. The main issue here will be
 //@ dealing with the overflow. First of all, we will have to detect when an overflow happens. This
@@ -136,7 +136,7 @@ impl<'a, 'b> ops::Add<&'a BigInt> for &'b BigInt {
 //@ program for normal use. Other than that, tests work as usually.
 #[cfg(test)]
 mod tests {
-    use part05::BigInt;
+    use crate::part05::BigInt;
 
     /*#[test]*/
     fn test_add() {
@@ -156,10 +156,10 @@ mod tests {
 //@ which tells Rust to look in the parent module.
 //@ 
 //@ You can make names from other modules available locally with `use`. Per default, `use` works
-//@ globally, so e.g. `use std;` imports the *global* name `std`. By adding `super::` or `self::`
+//@ globally, so e.g. `use crate::std;` imports the *global* name `std`. By adding `super::` or `self::`
 //@ to the beginning of the path, you make it relative to the parent or current module,
 //@ respectively. (You can also explicitly construct an absolute path by starting it with `::`,
-//@ e.g., `::std::cmp::min`). You can say `pub use path;` to simultaneously *import* names and make
+//@ e.g., `::std::cmp::min`). You can say `pub use crate::path;` to simultaneously *import* names and make
 //@ them publicly available to others. Finally, you can import all public items of a module at once
 //@ with `use module::*;`.
 //@ 

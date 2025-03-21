@@ -20,12 +20,12 @@ use std::cell::{Cell, RefCell};
 //@ Wait a moment, you may say here. Multiple references to the same data? That's aliasing! Indeed:
 //@ Once data is stored in an `Rc`, it is read-only and you can only ever get a shared reference to the data again.
 
-//@ Because of this read-only restriction, we cannot use `FnMut` here: We'd be unable to call the
-//@ function with a mutable reference to it's environment! So we have to go with `Fn`. We wrap that
+//@ Because of this read-only restriction, we cannot use `dyn FnMut` here: We'd be unable to call the
+//@ function with a mutable reference to it's environment! So we have to go with `dyn Fn`. We wrap that
 //@ in an `Rc`, and then Rust happily derives `Clone` for us.
 #[derive(Clone)]
 struct Callbacks {
-    callbacks: Vec<Rc<Fn(i32)>>,
+    callbacks: Vec<Rc<dyn Fn(i32)>>,
 }
 
 impl Callbacks {
@@ -59,7 +59,7 @@ pub fn main() {
 
 // ## Interior Mutability
 //@ Of course, the counting example from last time does not work anymore: It needs to mutate the
-//@ environment, which a `Fn` cannot do. The strict borrowing Rules of Rust are getting into our
+//@ environment, which a `dyn Fn` cannot do. The strict borrowing Rules of Rust are getting into our
 //@ way. However, when it comes to mutating a mere number (`usize`), there's not really any chance
 //@ of problems coming up. Everybody can read and write that variable just as they want.
 //@ So it would be rather sad if we were not able to write this program. Lucky enough, Rust's
@@ -110,7 +110,7 @@ fn demo_cell(c: &mut Callbacks) {
 //@ mutability once and for all, by adding `Cell` to `Callbacks` such that clients don't have to
 //@ worry about this. However, that won't end up working: Remember that `Cell` only works with
 //@ types that are `Copy`, which the environment of a closure will never be. We need a variant of
-//@ `Cell` that allows borrowing its contents, such that we can provide a `FnMut` with its
+//@ `Cell` that allows borrowing its contents, such that we can provide a `dyn FnMut` with its
 //@ environment. But if `Cell` would allow that, we could write down all those crashing C++
 //@ programs that we wanted to get rid of.
 //@ 
@@ -123,7 +123,7 @@ fn demo_cell(c: &mut Callbacks) {
 // Our final version of `Callbacks` puts the closure environment into a `RefCell`.
 #[derive(Clone)]
 struct CallbacksMut {
-    callbacks: Vec<Rc<RefCell<FnMut(i32)>>>,
+    callbacks: Vec<Rc<RefCell<dyn FnMut(i32)>>>,
 }
 
 impl CallbacksMut {

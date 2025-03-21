@@ -107,13 +107,12 @@ fn sort_array() {
 
 // I disabled the following module (using a rather bad hack), because it only compiles if `docopt`
 // is linked. Remove the attribute of the `rgrep` module to enable compilation.
-#[cfg(feature = "disabled")]
 pub mod rgrep {
     // Now that `docopt` is linked, we can first add it to the namespace with `extern crate` and
     // then import shorter names with `use`. We also import some other pieces that we will need.
     extern crate docopt;
     use self::docopt::Docopt;
-    use part13::{run, Options, OutputMode};
+    use crate::part13::{run, Options, OutputMode};
     use std::process;
 
     // The `USAGE` string documents how the program is to be called. It's written in a format that

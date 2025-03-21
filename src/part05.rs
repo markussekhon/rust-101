@@ -95,7 +95,7 @@ impl Clone for BigInt {
 // We can also make the type `SomethingOrNothing<T>` implement `Clone`.
 //@ However, that can only work if `T` is `Clone`! So we have to add this bound to `T` when we
 //@ introduce the type variable.
-use part02::{SomethingOrNothing,Something,Nothing};
+use crate::part02::{SomethingOrNothing,Something,Nothing};
 impl<T: Clone> Clone for SomethingOrNothing<T> {
     fn clone(&self) -> Self {
         match *self {                                               /*@*/
