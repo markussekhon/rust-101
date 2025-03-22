@@ -12,10 +12,13 @@
 //@ meaning "many shapes"). You may know something similar from C++ (where it's called
 //@ *templates*) or Java, or one of the many functional languages. So here, we define
 //@ a generic type `SomethingOrNothing`.
-pub enum SomethingOrNothing<T>  {
+pub enum SomethingOrNothing<T> {
     Something(T),
     Nothing,
 }
+
+use std::fmt::Display;
+
 // Instead of writing out all the variants, we can also just import them all at once.
 pub use self::SomethingOrNothing::*;
 //@ What this does is define an entire family of types: We can now write
@@ -31,8 +34,8 @@ type NumberOrNothing = SomethingOrNothing<i32>;
 // ## Generic `impl`, Static functions
 //@ The types are so similar, that we can provide a generic function to construct a
 //@ `SomethingOrNothing<T>` from an `Option<T>`, and vice versa.
-//@ 
-//@ Notice the syntax for giving generic implementations to generic types: Think of the first `<T>` 
+//@
+//@ Notice the syntax for giving generic implementations to generic types: Think of the first `<T>`
 //@ as *declaring* a type variable ("I am doing something for all types `T`"), and the second `<T>`
 //@ as *using* that variable ("The thing I do, is implement `SomethingOrNothing<T>`").
 //@
@@ -41,17 +44,23 @@ type NumberOrNothing = SomethingOrNothing<i32>;
 //@ Remember that `self` is the `this` of Rust, and implicitly has type `Self`.
 impl<T> SomethingOrNothing<T> {
     fn new(o: Option<T>) -> Self {
-        match o { None => Nothing, Some(t) => Something(t) }        /*@*/
+        match o {
+            None => Nothing,
+            Some(t) => Something(t),
+        } /*@*/
     }
 
     fn to_option(self) -> Option<T> {
-        match self { Nothing => None, Something(t) => Some(t) }     /*@*/
+        match self {
+            Nothing => None,
+            Something(t) => Some(t),
+        } /*@*/
     }
 }
 //@ Observe how `new` does *not* have a `self` parameter. This corresponds to a `static` method
 //@ in Java or C++. In fact, `new` is the Rust convention for defining constructors: They are
 //@ nothing special, just static functions returning `Self`.
-//@ 
+//@
 // You can call static functions, and in particular constructors, as demonstrated in `call_constructor`.
 fn call_constructor(x: i32) -> SomethingOrNothing<i32> {
     SomethingOrNothing::new(Some(x))
@@ -70,7 +79,7 @@ fn call_constructor(x: i32) -> SomethingOrNothing<i32> {
 //@ first argument the special `self` argument. I could, alternatively, have
 //@ made `min` a static function as follows: `fn min(a: Self, b: Self) -> Self`.
 //@ However, in Rust one typically prefers methods over static functions wherever possible.
-pub trait Minimum : Copy {
+pub trait Minimum: Copy {
     fn min(self, b: Self) -> Self;
 }
 
@@ -79,7 +88,7 @@ pub trait Minimum : Copy {
 //@ The only difference to the version from the previous part is that we call `e.min(n)` instead
 //@ of `min_i32(n, e)`. Rust automatically figures out that `e` is of type `T`, which implements
 //@ the `Minimum` trait, and hence we can call that function.
-//@ 
+//@
 //@ There is a crucial difference to templates in C++: We actually have to declare which traits
 //@ we want the type to satisfy. If we left away the `Minimum`, Rust would have complained that
 //@ we cannot call `min`. Just try it! <br/>
@@ -92,7 +101,7 @@ pub fn vec_min<T: Minimum>(v: Vec<T>) -> SomethingOrNothing<T> {
             Nothing => e,
             // Here, we can now call the `min` function of the trait.
             Something(n) => {
-                e.min(n)                                            /*@*/
+                e.min(n) /*@*/
             }
         });
     }
@@ -103,7 +112,7 @@ pub fn vec_min<T: Minimum>(v: Vec<T>) -> SomethingOrNothing<T> {
 //@ *for an existing type*. With the hierarchical approach of, e.g., C++ or Java,
 //@ that's not possible: We cannot make an existing type also inherit from our abstract base class
 //@ after the fact.
-//@ 
+//@
 //@ In case you are worried about performance, note that Rust performs *monomorphisation*
 //@ of generic functions: When you call `vec_min` with `T` being `i32`, Rust essentially goes
 //@ ahead and creates a copy of the function for this particular type, filling in all the blanks.
@@ -114,9 +123,24 @@ pub fn vec_min<T: Minimum>(v: Vec<T>) -> SomethingOrNothing<T> {
 
 // ## Trait implementations
 // To make `vec_min` usable with a `Vec<i32>`, we implement the `Minimum` trait for `i32`.
+
+impl Minimum for f32 {
+    fn min(self, b: Self) -> Self {
+        if self < b {
+            self
+        } else {
+            b
+        } /*@*/
+    }
+}
+
 impl Minimum for i32 {
     fn min(self, b: Self) -> Self {
-        if self < b { self } else { b }                             /*@*/
+        if self < b {
+            self
+        } else {
+            b
+        } /*@*/
     }
 }
 
@@ -124,11 +148,13 @@ impl Minimum for i32 {
 //@ This also shows that we can have multiple `impl` blocks for the same type (remember that
 //@ `NumberOrNothing` is just a type alias for `SomethingOrNothing<i32>`), and we can provide some
 //@ methods only for certain instances of a generic type.
-impl NumberOrNothing {
+//
+
+impl<T: Display> SomethingOrNothing<T> {
     pub fn print(self) {
         match self {
-            Nothing => println!("The number is: <nothing>"),
-            Something(n) => println!("The number is: {}", n),
+            Nothing => println!("The value is: <nothing>"),
+            Something(n) => println!("The value is: {}", n),
         };
     }
 }
@@ -137,9 +163,17 @@ impl NumberOrNothing {
 //@ Rust figures out automatically that we want the `T` of `vec_min` to be `i32`, and
 //@ that `i32` implements `Minimum` and hence all is good.
 fn read_vec() -> Vec<i32> {
-    vec![18,5,7,3,9,27]
+    vec![18, 5, 7, 3, 9, 27]
+}
+
+fn read_vec_f32() -> Vec<f32> {
+    vec![18.0, 5.0, 7.0, 3.0, 9.0, 27.0]
 }
 pub fn main() {
+    let vec = read_vec_f32();
+    let min = vec_min(vec);
+    min.print();
+
     let vec = read_vec();
     let min = vec_min(vec);
     min.print();
