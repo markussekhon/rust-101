@@ -94,7 +94,28 @@ pub trait Minimum: Copy {
 //@ we cannot call `min`. Just try it! <br/>
 //@ This is in strong contrast to C++, where the compiler only checks such details when the
 //@ function is actually used.
-pub fn vec_min<T: Minimum>(v: Vec<T>) -> SomethingOrNothing<T> {
+
+pub trait VectorMinimum<T: Minimum> {
+    fn minimum(self) -> SomethingOrNothing<T>;
+}
+
+impl<T: Minimum> VectorMinimum<T> for Vec<T> {
+    fn minimum(self) -> SomethingOrNothing<T> {
+        let mut min = Nothing;
+        for e in self {
+            min = Something(match min {
+                Nothing => e,
+                // Here, we can now call the `min` function of the trait.
+                Something(n) => {
+                    e.min(n) /*@*/
+                }
+            });
+        }
+        min
+    }
+}
+
+pub fn minimum<T: Minimum>(v: Vec<T>) -> SomethingOrNothing<T> {
     let mut min = Nothing;
     for e in v {
         min = Something(match min {
@@ -171,11 +192,11 @@ fn read_vec_f32() -> Vec<f32> {
 }
 pub fn main() {
     let vec = read_vec_f32();
-    let min = vec_min(vec);
+    let min = vec.minimum();
     min.print();
 
     let vec = read_vec();
-    let min = vec_min(vec);
+    let min = vec.minimum();
     min.print();
 }
 

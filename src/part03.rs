@@ -9,8 +9,8 @@
 // I/O is provided by the module `std::io`, so we first have to import that with `use`.
 // We also import the I/O *prelude*, which makes a bunch of commonly used I/O stuff
 // directly available.
-use std::io::prelude::*;
 use std::io;
+use std::io::prelude::*;
 
 //@ Let's now go over this function line-by-line. First, we call the constructor of `Vec`
 //@ to create an empty vector. As mentioned in the previous part, `new` here is just
@@ -47,7 +47,7 @@ fn read_vec() -> Vec<i32> {
         //@ message. Still, you would not want a user to see such an error, so in a "real" program,
         //@ we would have to do proper error handling.
         //@ Can you find the documentation of `Result::unwrap`?
-        //@ 
+        //@
         // I chose the same name (`line`) for the new variable to ensure that I will never,
         // accidentally, access the "old" `line` again.
         let line = line.unwrap();
@@ -70,12 +70,12 @@ fn read_vec() -> Vec<i32> {
             //@ or to accidentally use a value that doesn't make any sense because there was an
             //@ error producing it.
             Ok(num) => {
-                vec.push(num)                                       /*@*/
-            },
+                vec.push(num) /*@*/
+            }
             // We don't care about the particular error, so we ignore it with a `_`.
             Err(_) => {
-                println!("What did I say about numbers?")           /*@*/
-            },
+                println!("What did I say about numbers?") /*@*/
+            }
         }
     }
 
@@ -89,14 +89,15 @@ fn read_vec() -> Vec<i32> {
 // For the rest of the code, we just re-use part 02 by importing it with `use`.
 //@ I already sneaked a bunch of `pub` in part 02 to make this possible: Only
 //@ items declared public can be imported elsewhere.
-use crate::part02::{SomethingOrNothing,Something,Nothing,vec_min};
+use crate::part02::{Nothing, Something, SomethingOrNothing, VectorMinimum};
 
 // If you update your `main.rs` to use part 03, `cargo run` should now ask you for some numbers,
 // and tell you the minimum. Neat, isn't it?
 pub fn main() {
     let vec = read_vec();
-    let min = vec_min(vec);                                         /*@*/
-    min.print();                                                    /*@*/
+    let min = vec.minimum(); /*@*/
+    min.print();
+    min.print2(); /*@*/
 }
 
 // **Exercise 03.1**: The goal is to write a generic version of `SomethingOrNothing::print`.
@@ -107,20 +108,26 @@ pub fn main() {
 // implementations (just compare it to the `impl` block from the previous exercise).
 // You can read this as "For all types `T` satisfying the `Print` trait, I provide an implementation
 // for `SomethingOrNothing<T>`".
-// 
+//
 // Notice that I called the function on `SomethingOrNothing` `print2` to disambiguate from the
 // `print` defined previously.
-// 
+//
 // *Hint*: There is a macro `print!` for printing without appending a newline.
 pub trait Print {
-    /* Add things here */
+    fn print_trait(self);
 }
 impl Print for i32 {
-    /* Add things here */
+    fn print_trait(self) {
+        println!("{}", self)
+    }
 }
 impl<T: Print> SomethingOrNothing<T> {
     fn print2(self) {
-        unimplemented!()
+        print!("There is the value: ");
+        match self {
+            Something(value) => value.print_trait(),
+            Nothing => println!("<nothing>"),
+        }
     }
 }
 
