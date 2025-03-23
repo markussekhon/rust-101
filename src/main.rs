@@ -113,7 +113,7 @@ mod part16;
 // To actually run the code of some part (after filling in the blanks, if necessary), simply edit
 // the `main` function.
 fn main() {
-    part03::main();
+    part04::main();
 }
 
 // Additional material
