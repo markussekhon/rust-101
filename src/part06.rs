@@ -2,7 +2,10 @@
 // ==================================
 
 // We continue to work on our `BigInt`, so we start by importing what we already established.
-use crate::part05::BigInt;
+use crate::{
+    part02::{Nothing, Something, SomethingOrNothing},
+    part05::BigInt,
+};
 
 // With `BigInt` being about numbers, we should be able to write a version of `vec_min`
 // that computes the minimum of a list of `BigInt`. First, we have to write `min` for `BigInt`.
@@ -20,8 +23,14 @@ impl BigInt {
         } else if self.data.len() > other.data.len() {
             other
         } else {
-            // **Exercise 06.1**: Fill in this code.
-            unimplemented!()
+            for (a, b) in self.data.iter().rev().zip(other.data.iter().rev()) {
+                if a < b {
+                    return self;
+                } else if a > b {
+                    return other;
+                }
+            }
+            self
         }
     }
 }
@@ -33,16 +42,17 @@ fn vec_min(v: &Vec<BigInt>) -> Option<BigInt> {
     // `iter`, the iterator that borrows the elements.
     for e in v {
         let e = e.clone();
-        min = Some(match min {                                      /*@*/
-            None => e,                                              /*@*/
-            Some(n) => e.min_try1(n)                                /*@*/
-        });                                                         /*@*/
+        min = Some(match min {
+            /*@*/
+            None => e,                /*@*/
+            Some(n) => e.min_try1(n), /*@*/
+        }); /*@*/
     }
     min
 }
 //@ Now, what's happening here? Why do we have to to make a full (deep) copy of `e`, and why did we
 //@ not have to do that in our previous version?
-//@ 
+//@
 //@ The answer is already hidden in the type of `vec_min`: `v` is just borrowed, but
 //@ the Option<BigInt> that it returns is *owned*. We can't just return one of the elements of `v`,
 //@ as that would mean that it is no longer in the vector! In our code, this comes up when we update
@@ -71,14 +81,7 @@ fn vec_min(v: &Vec<BigInt>) -> Option<BigInt> {
 //@ 02. `Copy` is the first *marker trait* that we encounter: It does not provide any methods, but
 //@ makes a promise about the behavior of the type - in this case, being duplicable.
 
-//@ If you try to implement `Copy` for `BigInt`, you will notice that Rust does not let you do
-//@ that. A type can only be `Copy` if all its elements are `Copy`, and that's not the case for
-//@ `BigInt`. However, we can make `SomethingOrNothing<T>` copy if `T` is `Copy`.
-use crate::part02::{SomethingOrNothing,Something,Nothing};
 impl<T: Copy> Copy for SomethingOrNothing<T> {}
-//@ Again, Rust can generate implementations of `Copy` automatically. If
-//@ you add `#[derive(Copy,Clone)]` right before the definition of `SomethingOrNothing`,
-//@ both `Copy` and `Clone` will automatically be implemented.
 
 //@ ## An operational perspective
 //@ Instead of looking at what happens "at the surface" (i.e., visible in Rust), one can also explain
@@ -94,7 +97,7 @@ impl<T: Copy> Copy for SomethingOrNothing<T> {}
 //@ means that passing a value around will always be a fast operation, no allocation or any other
 //@ kind of heap access will happen. In the situations where you would write a copy constructor in
 //@ C++ (and hence incur a hidden cost on every copy of this type), you'd have the type *not*
-//@ implement `Copy`, but only `Clone`. This makes the cost explicit.
+//@ implement `Copy`, but o  ignore_installnly `Clone`. This makes the cost explicit.
 
 // ## Lifetimes
 //@ To fix the performance problems of `vec_min`, we need to avoid using `clone`. We'd like the
@@ -107,7 +110,7 @@ impl<T: Copy> Copy for SomethingOrNothing<T> {}
 //@ element of `v` and use it to construct the return value.
 fn head<T>(v: &Vec<T>) -> Option<&T> {
     if v.len() > 0 {
-        Some(&v[0])                                                 /*@*/
+        Some(&v[0]) /*@*/
     } else {
         None
     }
@@ -139,13 +142,13 @@ fn rust_foo(mut v: Vec<i32>) -> i32 {
 //@ point is, saying that you borrowed your friend a `Vec<i32>`, or a book, is not good enough,
 //@ unless you also agree on *how long* your friend can borrow it. After all, you need to know when
 //@ you can rely on owning your data (or book) again.
-//@ 
+//@
 //@ Every reference in Rust has an associated lifetime, written `&'a T` for a reference with
 //@ lifetime `'a` to something of type `T`. The full type of `head` reads as follows: `fn<'a,
 //@ T>(&'a Vec<T>) -> Option<&'a T>`. Here, `'a` is a *lifetime variable*, which represents for how
 //@ long the vector has been borrowed. The function type expresses that argument and return value
 //@ have *the same lifetime*.
-//@ 
+//@
 //@ When analyzing the code of `rust_foo`, Rust has to assign a lifetime to `first`. It will choose
 //@ the scope where `first` is valid, which is the entire rest of the function. Because `head` ties
 //@ the lifetime of its argument and return value together, this means that `&v` also has to borrow
@@ -153,7 +156,7 @@ fn rust_foo(mut v: Vec<i32>) -> i32 {
 //@ reference to `v` for `push`, Rust complains that the two references (the one for `head`, and
 //@ the one for `push`) overlap, so neither of them can be unique. Lucky us! Rust caught our
 //@ mistake and made sure we don't crash the program.
-//@ 
+//@
 //@ So, to sum this up: Lifetimes enable Rust to reason about *how long* a reference is valid, how
 //@ long ownership has been borrowed. We can thus safely write functions like `head`, that return
 //@ references into data they got as argument, and make sure they are used correctly, *while
