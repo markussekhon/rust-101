@@ -33,9 +33,9 @@ impl BigInt {
     //@ fields and initial values assigned to them.
     pub fn new(x: u64) -> Self {
         if x == 0 {
-            BigInt { data: vec![] }                                 /*@*/
+            BigInt { data: vec![] } /*@*/
         } else {
-            BigInt { data: vec![x] }                                /*@*/
+            BigInt { data: vec![x] } /*@*/
         }
     }
 
@@ -45,7 +45,7 @@ impl BigInt {
         if self.data.len() == 0 {
             true
         } else {
-            self.data[self.data.len() - 1] != 0                     /*@*/
+            self.data[self.data.len() - 1] != 0 /*@*/
         }
     }
 
@@ -54,12 +54,15 @@ impl BigInt {
     // one in `let mut ...`: We completely own `v`, but Rust still asks us to make our intention of
     // modifying it explicit. This `mut` is *not* part of the type of `from_vec` - the caller has
     // to give up ownership of `v` anyway, so they don't care anymore what you do to it.
-    // 
+    //
     // **Exercise 05.1**: Implement this function.
-    // 
+    //
     // *Hint*: You can use `pop` to remove the last element of a vector.
     pub fn from_vec(mut v: Vec<u64>) -> Self {
-        unimplemented!()
+        while v.last() == Some(&0) {
+            v.pop();
+        }
+        BigInt { data: v }
     }
 }
 
@@ -70,7 +73,7 @@ impl BigInt {
 //@ full (or *deep*) copy will be performed. Technically, `clone` takes a borrowed vector in the
 //@ form of a shared reference, and returns a fully owned one.
 fn clone_demo() {
-    let v = vec![0,1 << 16];
+    let v = vec![0, 1 << 16];
     let b1 = BigInt::from_vec((&v).clone());
     let b2 = BigInt::from_vec(v);
 }
@@ -83,7 +86,9 @@ fn clone_demo() {
 //@ make our `BigInt` clonable as well.
 impl Clone for BigInt {
     fn clone(&self) -> Self {
-        BigInt { data: self.data.clone() }                          /*@*/
+        BigInt {
+            data: self.data.clone(),
+        } /*@*/
     }
 }
 //@ Making a type clonable is such a common exercise that Rust can even help you doing it:
@@ -95,11 +100,12 @@ impl Clone for BigInt {
 // We can also make the type `SomethingOrNothing<T>` implement `Clone`.
 //@ However, that can only work if `T` is `Clone`! So we have to add this bound to `T` when we
 //@ introduce the type variable.
-use crate::part02::{SomethingOrNothing,Something,Nothing};
+use crate::part02::{Nothing, Something, SomethingOrNothing};
 impl<T: Clone> Clone for SomethingOrNothing<T> {
     fn clone(&self) -> Self {
-        match *self {                                               /*@*/
-            Nothing => Nothing,                                     /*@*/
+        match *self {
+            /*@*/
+            Nothing => Nothing, /*@*/
             //@ In the second arm of the match, we need to talk about the value `v`
             //@ that's stored in `self`. However, if we were to write the pattern as
             //@ `Something(v)`, that would indicate that we *own* `v` in the code
@@ -107,8 +113,8 @@ impl<T: Clone> Clone for SomethingOrNothing<T> {
             //@ whoever called us - after all, we don't even own `self`, we just borrowed it.
             //@ By writing `Something(ref v)`, we borrow `v` for the duration of the match
             //@ arm. That's good enough for cloning it.
-            Something(ref v) => Something(v.clone()),               /*@*/
-        }                                                           /*@*/
+            Something(ref v) => Something(v.clone()), /*@*/
+        } /*@*/
     }
 }
 //@ Again, Rust will generate this implementation automatically if you add
@@ -136,7 +142,8 @@ fn work_on_variant(mut var: Variant, text: String) {
         Variant::Number(ref mut n) => ptr = n,
         Variant::Text(_) => return,
     }
-    /* var = Variant::Text(text); */                                /* BAD! */
+    /* var = Variant::Text(text); */
+    /* BAD! */
     *ptr = 1337;
 }
 //@ Now, imagine what would happen if we were permitted to also mutate `var`. We could, for
@@ -147,7 +154,7 @@ fn work_on_variant(mut var: Variant, text: String) {
 //@ overwriting that pointer with an integer, we make it a completely invalid address. When the
 //@ destructor of `var` runs, it would try to deallocate that address, and Rust would eat your
 //@ laundry - or whatever.)
-//@ 
+//@
 //@ I hope this example clarifies why Rust has to rule out mutation in the presence of aliasing
 //@ *in general*, not just for the specific case of a buffer being reallocated, and old pointers
 //@ becoming hence invalid.
