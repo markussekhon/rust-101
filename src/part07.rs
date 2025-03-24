@@ -1,6 +1,7 @@
 // Rust-101, Part 07: Operator Overloading, Tests, Formatting
 // ==========================================================
 
+use crate::part02::SomethingOrNothing::{self, Nothing, Something};
 pub use crate::part05::BigInt;
 
 // With our new knowledge of lifetimes, we are now able to write down the desired type of `min`:
@@ -19,7 +20,7 @@ pub fn vec_min<T: Minimum>(v: &Vec<T>) -> Option<&T> {
     for e in v {
         min = Some(match min {
             None => e,
-            Some(n) => n.min(e)
+            Some(n) => n.min(e),
         });
     }
     min
@@ -39,7 +40,21 @@ pub fn vec_min<T: Minimum>(v: &Vec<T>) -> Option<&T> {
 // exercise 06.1. You should *not* make any copies of `BigInt`!
 impl Minimum for BigInt {
     fn min<'a>(&'a self, other: &'a Self) -> &'a Self {
-        unimplemented!()
+        debug_assert!(self.test_invariant() && other.test_invariant());
+        if self.data.len() < other.data.len() {
+            self
+        } else if self.data.len() > other.data.len() {
+            other
+        } else {
+            for (a, b) in self.data.iter().rev().zip(other.data.iter().rev()) {
+                if a < b {
+                    return self;
+                } else if a > b {
+                    return other;
+                }
+            }
+            self
+        }
     }
 }
 
@@ -59,7 +74,7 @@ impl PartialEq for BigInt {
     #[inline]
     fn eq(&self, other: &BigInt) -> bool {
         debug_assert!(self.test_invariant() && other.test_invariant());
-        self.data == other.data                                     /*@*/
+        self.data == other.data /*@*/
     }
 }
 
@@ -85,7 +100,7 @@ impl PartialEq for BigInt {
 //@ `ToString`.
 //@ Compare that to C++ or Java, where the only chance to add a new overloading variant is to
 //@ edit the class of the receiver.
-//@ 
+//@
 //@ Why can we also use `!=`, even though we just overloaded `==`? The answer lies in what's called
 //@ a *default implementation*. If you check out the documentation of `PartialEq` I linked above,
 //@ you will see that the trait actually provides two methods: `eq` to test equality, and `ne` to
@@ -96,7 +111,12 @@ impl PartialEq for BigInt {
 fn compare_big_ints() {
     let b1 = BigInt::new(13);
     let b2 = BigInt::new(37);
-    println!("b1 == b1: {} ; b1 == b2: {}; b1 != b2: {}", b1 == b1, b1 == b2, b1 != b2);
+    println!(
+        "b1 == b1: {} ; b1 == b2: {}; b1 != b2: {}",
+        b1 == b1,
+        b1 == b2,
+        b1 != b2
+    );
 }
 
 // ## Testing
@@ -110,8 +130,8 @@ fn test_min() {
     let b2 = BigInt::new(42);
     let b3 = BigInt::from_vec(vec![0, 1]);
 
-    assert!(*b1.min(&b2) == b1);                                    /*@*/
-    assert!(*b3.min(&b2) == b2);                                    /*@*/
+    assert!(*b1.min(&b2) == b1); /*@*/
+    assert!(*b3.min(&b2) == b2); /*@*/
 }
 // Now run `cargo test` to execute the test. If you implemented `min` correctly, it should all work!
 
@@ -123,10 +143,9 @@ fn test_min() {
 //@ printing something in a way that users can understand, while `Debug` is meant to show the
 //@ internal state of data and targeted at the programmer. The latter is what we want for
 //@ `assert_eq!`, so let's get started.
-
 // All formating is handled by [`std::fmt`](https://doc.rust-lang.org/std/fmt/index.html). I won't
 // explain all the details, and refer you to the documentation instead.
-use std::fmt;
+use std::fmt::{self, Display};
 
 //@ In the case of `BigInt`, we'd like to just output our internal `data` array, so we
 //@ simply call the formating function of `Vec<u64>`.
@@ -138,7 +157,7 @@ impl fmt::Debug for BigInt {
 //@ `Debug` implementations can be automatically generated using the `derive(Debug)` attribute.
 
 // Now we are ready to use `assert_eq!` to test `vec_min`.
-/*#[test]*/
+#[test]
 fn test_vec_min() {
     let b1 = BigInt::new(1);
     let b2 = BigInt::new(42);
@@ -146,8 +165,8 @@ fn test_vec_min() {
 
     let v1 = vec![b2.clone(), b1.clone(), b3.clone()];
     let v2 = vec![b2.clone(), b3.clone()];
-    assert_eq!(vec_min(&v1), Some(&b1));                            /*@*/
-    assert_eq!(vec_min(&v2), Some(&b2));                            /*@*/
+    assert_eq!(vec_min(&v1), Some(&b1)); /*@*/
+    assert_eq!(vec_min(&v2), Some(&b2)); /*@*/
 }
 
 // **Exercise 07.1**: Add some more testcases. In particular, make sure you test the behavior of
@@ -158,6 +177,15 @@ fn test_vec_min() {
 // (This will, of course, need a `Display` bound on `T`.) Then you should be able to use them with
 // `println!` just like you do with numbers, and get rid of the inherent functions to print
 // `SomethingOrNothing<i32>` and `SomethingOrNothing<f32>`.
+
+impl<T: fmt::Display> fmt::Display for SomethingOrNothing<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Something(n) => write!(f, "Value: {}", n),
+            Nothing => write!(f, "<Nothing>"),
+        }
+    }
+}
 
 //@ [index](main.html) | [previous](part06.html) | [raw source](workspace/src/part07.rs) |
 //@ [next](part08.html)
